@@ -181,4 +181,11 @@
         </dev>
     </default>
 
+    <phpunit>
+        <suite>
+            <modules>
+                <Aoe_Static/>
+            </modules>
+        </suite>
+    </phpunit>
 </config>
