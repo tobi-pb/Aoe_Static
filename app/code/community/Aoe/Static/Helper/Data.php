@@ -98,6 +98,7 @@ class Aoe_Static_Helper_Data extends Mage_Core_Helper_Abstract
 
             // queue if async cache is enabled in config and not forced to purge directly
             if ($this->getConfig()->useAsyncCache() && $queue) {
+                // @codeCoverageIgnoreStart
                 foreach ($urls as $url) {
                     /** @var $asyncCache Aoe_AsyncCache_Model_Asynccache */
                     $asyncCache = Mage::getModel('aoeasynccache/asynccache');
@@ -107,6 +108,7 @@ class Aoe_Static_Helper_Data extends Mage_Core_Helper_Abstract
                         ->setStatus(Aoe_AsyncCache_Model_Asynccache::STATUS_PENDING)
                         ->save();
                 }
+                // @codeCoverageIgnoreEnd
             } else {
                 $result = array_merge($result, $adapter->purge($urls));
             }
