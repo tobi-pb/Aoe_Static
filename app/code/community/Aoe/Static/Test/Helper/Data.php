@@ -5,9 +5,8 @@ class Aoe_Static_Test_Helper_Data extends EcomDev_PHPUnit_Test_Case
     public function setup()
     {
         // mock testing adapter
-        if (!Mage::registry('_singleton/aoestatic/test_model_cache_adapter_testing')) {
-            Mage::register('_singleton/aoestatic/test_model_cache_adapter_testing', new Aoe_Static_Test_Model_Cache_Adapter_Testing());
-        }
+        Mage::unregister('_singleton/aoestatic/test_model_cache_adapter_testing');
+        Mage::register('_singleton/aoestatic/test_model_cache_adapter_testing', new Aoe_Static_Test_Model_Cache_Adapter_Testing());
     }
 
     protected function setCache($status)

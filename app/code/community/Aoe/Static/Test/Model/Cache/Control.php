@@ -1,6 +1,6 @@
 <?php
 
-class Aoe_Static_Test_Model_Cache_Control extends EcomDev_PHPUnit_Test_Case
+class Aoe_Static_Test_Model_Cache_Control extends EcomDev_PHPUnit_Test_Case_Controller
 {
     /**
      * @var null|ReflectionClass
@@ -126,6 +126,52 @@ class Aoe_Static_Test_Model_Cache_Control extends EcomDev_PHPUnit_Test_Case
 
         $tags->setValue($cacheControl, array());
 
-        //$this->assertInstanceOf('Aoe_Static_Model_Cache_Control', $cacheControl->collectTags());
+        $customerSessionMock = $this->getModelMock('customer/session', array('renewSession'));
+        $this->replaceByMock('singleton', 'customer/session', $customerSessionMock);
+
+        $this->assertInstanceOf('Aoe_Static_Model_Cache_Control', $cacheControl->collectTags());
+
+        $product = new Varien_Object();
+        $product->setId('123');
+        Mage::register('product', $product);
+        $this->assertArrayNotHasKey('product-123-' . $storeId, $tags->getValue($cacheControl));
+        $cacheControl->collectTags();
+        $this->assertArrayHasKey('product-123-' . $storeId, $tags->getValue($cacheControl));
+
+        // mock category layer
+        $layerProductCollection = new Varien_Object();
+        $layerProductCollection->setLoadedIds(array('111', '112', '113'));
+        $layerCurrentCategory = new Varien_Object();
+        $layerCurrentCategory->setId(1);
+        $layerCurrentStore = new Varien_Object();
+        $layerCurrentStore->setRootCategoryId(0);
+
+        $layerMock = $this->getModelMock('catalog/layer', array('apply', 'getProductCollection'));
+        $layerMock->expects($this->any())->method('apply')->will($this->returnSelf());
+        $layerMock->expects($this->any())->method('getProductCollection')->will($this->returnValue($layerProductCollection));
+        $this->replaceByMock('model', 'catalog/layer', $layerMock);
+
+        $layer = Mage::getModel('catalog/layer');
+        $layer->addData(array(
+            'current_category'      => $layerCurrentCategory,
+            'current_store'         => $layerCurrentStore,
+        ));
+
+        Mage::register('current_layer', $layer);
+
+        $this->assertArrayNotHasKey('product-111-' . $storeId, $tags->getValue($cacheControl));
+        $this->assertArrayNotHasKey('product-112-' . $storeId, $tags->getValue($cacheControl));
+        $this->assertArrayNotHasKey('product-113-' . $storeId, $tags->getValue($cacheControl));
+        $cacheControl->collectTags();
+        $this->assertArrayHasKey('product-111-' . $storeId, $tags->getValue($cacheControl));
+        $this->assertArrayHasKey('product-112-' . $storeId, $tags->getValue($cacheControl));
+        $this->assertArrayHasKey('product-113-' . $storeId, $tags->getValue($cacheControl));
+
+        $this->assertArrayNotHasKey('category-111-' . $storeId, $tags->getValue($cacheControl));
+        $category = new Varien_Object();
+        $category->setId(111);
+        Mage::register('current_category', $category);
+        $cacheControl->collectTags();
+        $this->assertArrayHasKey('category-111-' . $storeId, $tags->getValue($cacheControl));
     }
 }
