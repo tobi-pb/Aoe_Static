@@ -6,13 +6,13 @@ tables:
   aoestatic/custom_url:
     - custom_url_id: 1
           store_id: 0
-          request_path: test
+          request_path: /test
           max_age: 100
     - custom_url_id: 2
           store_id: 0
-          request_path: test2
+          request_path: /test2
           max_age: 200
     - custom_url_id: 3
           store_id: 0
-          request_path: test3
+          request_path: /test3
           max_age: 300

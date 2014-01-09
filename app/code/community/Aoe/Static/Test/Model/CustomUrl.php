@@ -24,7 +24,14 @@ class Aoe_Static_Test_Model_CustomUrl extends EcomDev_PHPUnit_Test_Case
 
         $this->assertEquals(1, $customurl->getId());
         $this->assertEquals(0, $customurl->getStoreId());
-        $this->assertEquals('test', $customurl->getRequestPath());
+        $this->assertEquals('/test', $customurl->getRequestPath());
+        $this->assertEquals(100, $customurl->getMaxAge());
+
+        $customurl = Mage::getModel('aoestatic/customUrl')->setStoreId(0)->load(1);
+
+        $this->assertEquals(1, $customurl->getId());
+        $this->assertEquals(0, $customurl->getStoreId());
+        $this->assertEquals('/test', $customurl->getRequestPath());
         $this->assertEquals(100, $customurl->getMaxAge());
 
         $this->assertCount(0, $customurl->getCollection()->addStoreFilter(1, false));
@@ -42,8 +49,10 @@ class Aoe_Static_Test_Model_CustomUrl extends EcomDev_PHPUnit_Test_Case
 
         $this->assertEquals(0, $customurl->getId());
 
-        $customurl->loadByRequestPath('test2');
+        $customurl->loadByRequestPath('/test2');
         $this->assertEquals(2, $customurl->getId());
+        $customurl->loadByRequestPath(array('/test', '/test2'));
+        $this->assertEquals(1, $customurl->getId());
     }
 
     /**
@@ -71,13 +80,13 @@ class Aoe_Static_Test_Model_CustomUrl extends EcomDev_PHPUnit_Test_Case
         $this->assertEquals(0, $customurl->getId());
         $customurl->addData(array(
             'store_id'      => 0,
-            'request_path'  => 'test4',
+            'request_path'  => '/test4',
             'max_age'       => 400,
         ));
         $customurl->save();
         $this->assertEquals(1, Mage::registry('_aoestatic_testadapter_purge'));
         $this->assertCount(4, $customurl->getCollection());
         $this->assertGreaterThan(3, $customurl->getId());
-        $this->assertEquals('test4', $customurl->getRequestPath());
+        $this->assertEquals('/test4', $customurl->getRequestPath());
     }
 }

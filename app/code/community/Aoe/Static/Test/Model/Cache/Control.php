@@ -174,4 +174,27 @@ class Aoe_Static_Test_Model_Cache_Control extends EcomDev_PHPUnit_Test_Case_Cont
         $cacheControl->collectTags();
         $this->assertArrayHasKey('category-111-' . $storeId, $tags->getValue($cacheControl));
     }
+
+    /**
+     * @loadFixture general.yaml
+     */
+    public function test_addCustomUrlMaxAge()
+    {
+        $cacheControl = Mage::getSingleton('aoestatic/cache_control');
+        $maxage = $this->_getProtectProperty('_maxAge');
+        $maxage->setValue($cacheControl, 0);
+
+        $request = $this->getRequest();
+
+        $request->setRequestUri(Mage::app()->getStore()->getBaseUrl(Mage_Core_Model_Store::URL_TYPE_LINK) . 'test2');
+        $request->setPathInfo();
+        $cacheControl->addCustomUrlMaxAge($request);
+        $this->assertEquals(200, $maxage->getValue($cacheControl));
+
+        $request->setRoutingInfo(array('aliases' => array(Mage_Core_Model_Url_Rewrite::REWRITE_REQUEST_PATH_ALIAS => '/test')));
+        $request->setRequestUri(Mage::app()->getStore()->getBaseUrl(Mage_Core_Model_Store::URL_TYPE_LINK) . 'test-notfound');
+        $request->setPathInfo();
+        $cacheControl->addCustomUrlMaxAge($request);
+        $this->assertEquals(100, $maxage->getValue($cacheControl));
+    }
 }

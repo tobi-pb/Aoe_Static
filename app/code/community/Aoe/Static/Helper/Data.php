@@ -108,8 +108,8 @@ class Aoe_Static_Helper_Data extends Mage_Core_Helper_Abstract
                         ->setStatus(Aoe_AsyncCache_Model_Asynccache::STATUS_PENDING)
                         ->save();
                 }
-                // @codeCoverageIgnoreEnd
             } else {
+                // @codeCoverageIgnoreEnd
                 $result = array_merge($result, $adapter->purge($urls));
             }
         }
