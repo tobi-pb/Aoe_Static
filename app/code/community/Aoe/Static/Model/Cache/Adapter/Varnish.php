@@ -34,92 +34,64 @@ class Aoe_Static_Model_Cache_Adapter_Varnish implements Aoe_Static_Model_Cache_A
      */
     public function purge(array $urls)
     {
-        $errors = array();
 
-        // Init curl handler
-        $curlHandlers = array(); // keep references for clean up
-        $multiHandler = curl_multi_init();
+        $httpHelper = Mage::helper('aoestatic/http');
+        $httpHelper->reset();
+
+        $options = array(
+            CURLOPT_CUSTOMREQUEST   => 'PURGE',
+            CURLOPT_RETURNTRANSFER  => 1,
+            CURLOPT_SSL_VERIFYPEER  => 0,
+            CURLOPT_SSL_VERIFYHOST  => 0,
+        );
+        $httpHelper->setGlobalOptions($options);
 
         foreach ($this->_varnishServers as $varnishServer) {
             foreach ($urls as $url) {
-                $varnishUrl = "http://" . $varnishServer . '/' . $url;
+                $request = array(
+                    CURLOPT_URL         => 'http://' . $varnishServer . '/' . $url,
+                );
 
-                $curlHandler = curl_init();
-                curl_setopt($curlHandler, CURLOPT_URL, $varnishUrl);
-                curl_setopt($curlHandler, CURLOPT_CUSTOMREQUEST, 'PURGE');
-                curl_setopt($curlHandler, CURLOPT_RETURNTRANSFER, 1);
-                curl_setopt($curlHandler, CURLOPT_SSL_VERIFYPEER, 0);
-                curl_setopt($curlHandler, CURLOPT_SSL_VERIFYHOST, 0);
-
-                curl_multi_add_handle($multiHandler, $curlHandler);
-                $curlHandlers[] = $curlHandler;
+                $httpHelper->addRequests($request);
             }
         }
 
-        do {
-            curl_multi_exec($multiHandler, $active);
-        } while ($active);
-
-        // Error handling and clean up
-        foreach ($curlHandlers as $curlHandler) {
-            $info = curl_getinfo($curlHandler);
-
-            if (curl_errno($curlHandler)) {
-                $errors[] = "Cannot purge url {$info['url']} due to error" . curl_error($curlHandler);
-            } else if ($info['http_code'] != 200 && $info['http_code'] != 404) {
-                $errors[] = "Cannot purge url {$info['url']}, http code: {$info['http_code']}. curl error: " . curl_error($curlHandler);
-            }
-
-            curl_multi_remove_handle($multiHandler, $curlHandler);
-            curl_close($curlHandler);
-        }
-        curl_multi_close($multiHandler);
+        $errors = $httpHelper->execute();
 
         return $errors;
     }
 
+    /**
+     * purges an array of given tags in varnish by using the X-Invalidates header
+     *
+     * @param array $tags
+     * @return array
+     */
     public function purgeTags(array $tags)
     {
-        $errors = array();
-        // Init curl handler
-        $curlHandlers = array(); // keep references for clean up
-        $multiHandler = curl_multi_init();
+        $httpHelper = Mage::helper('aoestatic/http');
+        $httpHelper->reset();
+
+        $options = array(
+            CURLOPT_CUSTOMREQUEST   => 'BAN',
+            CURLOPT_RETURNTRANSFER  => 1,
+            CURLOPT_SSL_VERIFYPEER  => 0,
+            CURLOPT_SSL_VERIFYHOST  => 0,
+        );
+        $httpHelper->setGlobalOptions($options);
 
         foreach ($this->_varnishServers as $varnishServer) {
             foreach ($tags as $tag) {
-                $varnishUrl = "http://" . $varnishServer;
+                $request = array(
+                    CURLOPT_URL         => 'http://' . $varnishServer,
+                    CURLOPT_HTTPHEADER  => array('X-Invalidates: ' . Aoe_Static_Model_Cache_Control::DELIMITER . $tag),
+                );
 
-                $curlHandler = curl_init();
-                curl_setopt($curlHandler, CURLOPT_URL, $varnishUrl);
-                curl_setopt($curlHandler, CURLOPT_CUSTOMREQUEST, 'BAN');
-                curl_setopt($curlHandler, CURLOPT_RETURNTRANSFER, 1);
-                curl_setopt($curlHandler, CURLOPT_SSL_VERIFYPEER, 0);
-                curl_setopt($curlHandler, CURLOPT_SSL_VERIFYHOST, 0);
-                curl_setopt($curlHandler, CURLOPT_HTTPHEADER, array('X-Invalidates: ' . Aoe_Static_Model_Cache_Control::DELIMITER . $tag));
-
-                curl_multi_add_handle($multiHandler, $curlHandler);
-                $curlHandlers[] = $curlHandler;
+                $httpHelper->addRequests($request);
             }
         }
 
-        do {
-            curl_multi_exec($multiHandler, $active);
-        } while ($active);
-
-        // Error handling and clean up
-        foreach ($curlHandlers as $curlHandler) {
-            $info = curl_getinfo($curlHandler);
-
-            if (curl_errno($curlHandler)) {
-                $errors[] = "Cannot purge tag {$info['url']} due to error" . curl_error($curlHandler);
-            } else if ($info['http_code'] != 200 && $info['http_code'] != 404) {
-                $errors[] = "Cannot purge tag {$info['url']}, http code: {$info['http_code']}. curl error: " . curl_error($curlHandler);
-            }
-
-            curl_multi_remove_handle($multiHandler, $curlHandler);
-            curl_close($curlHandler);
-        }
-        curl_multi_close($multiHandler);
+        $errors = $httpHelper->execute();
 
         return $errors;
     }
