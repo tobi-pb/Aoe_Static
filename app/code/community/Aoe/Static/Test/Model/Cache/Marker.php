@@ -51,4 +51,15 @@ class Aoe_Static_Test_Model_Cache_Marker extends EcomDev_PHPUnit_Test_Case
         $cacheMarker->addMarkerValues(array('test' => 'testvalue'));
         $this->assertEquals('testvalue', $cacheMarker->getMarkerValue('test'));
     }
+
+    public function test_executeCallback()
+    {
+        // I'm abusing the api-model to have something testable. Ugly as hell
+        $callbackMock = $this->getModelMock('aoestatic/api', array('testcallback'));
+        $callbackMock->expects($this->any())->method('testcallback')->will($this->returnValue('testresult'));
+
+        $this->replaceByMock('model', 'aoestatic/api', $callbackMock);
+
+        $this->assertEquals('testresult', Mage::getModel('aoestatic/cache_marker')->executeCallback('aoestatic/api::testcallback'));
+    }
 }
