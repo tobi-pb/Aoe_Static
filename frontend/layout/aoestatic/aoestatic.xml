@@ -3,9 +3,21 @@
 	<default>
 	<!--
 		<reference name="head">
-			<action method="addJs"><script>aoestatic/jquery-1.6.1.min.js</script></action>
-			<action method="addJs"><script>aoestatic/jquery.cookie.js</script></action>
-			<action method="addJs"><script>aoestatic/common.js</script></action>
+			<action method="addItem">
+                <type>skin_js</type>
+                <name>js/aoestatic/jquery-1.6.1.min.js</name>
+            </action>
+
+            <action method="addItem">
+                <type>skin_js</type>
+                <name>js/aoestatic/jquery.cookie.js</name>
+            </action>
+
+
+			<action method="addItem">
+                <type>skin_js</type>
+                <name>js/aoestatic/common.js</name>
+            </action>
 		</reference>
 
 		<reference name="before_body_end">
