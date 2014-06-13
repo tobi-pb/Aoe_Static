@@ -12,7 +12,7 @@ var Aoe_Static = {
     ajaxHomeUrl: null,
     currentProductId: null,
 
-    init: function(ajaxhome_url, fullactionname, storeId, websiteId, currentproductid) {
+    init: function (ajaxhome_url, fullactionname, storeId, websiteId, currentproductid) {
         this.storeId = storeId;
         this.websiteId = websiteId;
         this.fullActionName = fullactionname;
@@ -25,7 +25,7 @@ var Aoe_Static = {
     /**
      * populate page
      */
-    populatePage: function() {
+    populatePage: function () {
         this.replaceCookieContent();
         this.replaceAjaxBlocks();
         if (this.isLoggedIn()) {
@@ -40,25 +40,41 @@ var Aoe_Static = {
     /**
      * Replace cookie content
      */
-    replaceCookieContent: function() {
-        jQuery.each(this.getCookieContent(), function(name, value) {
+    replaceCookieContent: function () {
+        jQuery.each(this.getCookieContent(), function (name, value) {
             jQuery('.aoestatic_' + name).text(value);
             // console.log('Replacing ".aoestatic_' + name + '" with "' + value + '"');
         })
     },
 
-    isLoggedIn: function() {
+    isLoggedIn: function () {
         var cookieValues = this.getCookieContent();
         return typeof cookieValues['customername'] != 'undefined' && cookieValues['customername'].length;
+    },
+
+
+    getCookies: function () {
+        var cookies = { };
+        if (document.cookie && document.cookie != '') {
+            var split = document.cookie.split(';');
+            for (var i = 0; i < split.length; i++) {
+                var name_value = split[i].split("=");
+                name_value[0] = name_value[0].replace(/^ /, '');
+
+                var s = name_value[1];
+                cookies[decodeURIComponent(name_value[0])] = decodeURIComponent(s.replace(/\+/g, ' '));
+            }
+        }
+        return cookies;
     },
 
     /**
      * Get info from cookies
      */
-    getCookieContent: function() {
+    getCookieContent: function () {
         // expected format as_[g|w<websiteId>|s<storeId>]
         var values = {};
-        jQuery.each(jQuery.cookie(), function(name, value) {
+        jQuery.each(this.getCookies(), function (name, value) {
             if (name.substr(0, 10) == 'aoestatic_') {
                 name = name.substr(10);
                 var parts = name.split('_')
@@ -74,7 +90,7 @@ var Aoe_Static = {
         });
 
         var cookieValues = {};
-        jQuery.each(values, function(name, data) {
+        jQuery.each(values, function (name, data) {
             if (typeof data['s' + Aoe_Static.storeId] != 'undefined') {
                 cookieValues[name] = data['s' + Aoe_Static.storeId];
             } else if (typeof data['w' + Aoe_Static.websiteId] != 'undefined') {
@@ -89,15 +105,15 @@ var Aoe_Static = {
     /**
      * Load block content from server
      */
-    replaceAjaxBlocks: function() {
-        jQuery(document).ready(function($) {
+    replaceAjaxBlocks: function () {
+        jQuery(document).ready(function ($) {
             var data = {
                 getBlocks: {}
             };
 
             // add placeholders
             var counter = 0;
-            $('.as-placeholder').each(function() {
+            $('.as-placeholder').each(function () {
                 var id = $(this).attr('id');
                 if (!id) {
                     // create dynamic id
@@ -116,10 +132,10 @@ var Aoe_Static = {
 
             // add current product
             /* This needs some serious refactoring anyways...
-            if (typeof currentproductid !== 'undefined' && currentproductid) {
-                data.currentProductId = currentproductid;
-            }
-            */
+             if (typeof currentproductid !== 'undefined' && currentproductid) {
+             data.currentProductId = currentproductid;
+             }
+             */
 
             // E.T. phone home
             if (typeof data.currentProductId !== 'undefined' || counter > 0) {
@@ -127,7 +143,7 @@ var Aoe_Static = {
                     this.ajaxHomeUrl,
                     data,
                     function (response) {
-                        for(var id in response.blocks) {
+                        for (var id in response.blocks) {
                             $('#' + id).html(response.blocks[id]);
                         }
                         jQuery('body').trigger('aoestatic_afterblockreplace');
