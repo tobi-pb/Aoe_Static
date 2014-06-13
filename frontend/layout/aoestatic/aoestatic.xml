@@ -7,13 +7,6 @@
                 <type>skin_js</type>
                 <name>js/aoestatic/jquery-1.6.1.min.js</name>
             </action>
-
-            <action method="addItem">
-                <type>skin_js</type>
-                <name>js/aoestatic/jquery.cookie.js</name>
-            </action>
-
-
 			<action method="addItem">
                 <type>skin_js</type>
                 <name>js/aoestatic/common.js</name>

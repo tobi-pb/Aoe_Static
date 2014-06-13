@@ -4,52 +4,156 @@
  *
  * @author Fabrizio Branca
  */
-$.noConflict();
-jQuery(document).ready(function($) {
+var Aoe_Static = {
 
-	var data = { 
-		getBlocks: {}
-	};
+    storeId: null,
+    websiteId: null,
+    fullActionName: null,
+    ajaxHomeUrl: null,
+    currentProductId: null,
 
-	// add placeholders
-	var counter = 0;
-	$('.placeholder').each(function() {
-		var id = $(this).attr('id');
-		if (!id) {
-			// create dynamic id
-			id = 'ph_' + counter;
-			$(this).attr('id', id);
-		}
-		var rel = $(this).attr('rel');
-		if (rel) {
-			data.getBlocks[id] = rel;
-			counter++;
-		} else {
-			throw 'Found placeholder without rel attribute';
-		}
-	});
+    init: function (ajaxhome_url, fullactionname, storeId, websiteId, currentproductid) {
+        this.storeId = storeId;
+        this.websiteId = websiteId;
+        this.fullActionName = fullactionname;
+        this.ajaxHomeUrl = ajaxhome_url;
+        this.currentProductId = currentproductid;
 
-	// add current product
-	if (typeof CURRENTPRODUCTID !== 'undefined' && CURRENTPRODUCTID) {
-		data.currentProductId = CURRENTPRODUCTID;
-	}
+        this.populatePage();
+    },
 
-	// E.T. phone home
-	if (typeof data.currentProductId !== 'undefined' || counter > 0) {
-		$.get(
-			AJAXHOME_URL,
-			data,
-			function (response) {
-				for(var id in response.blocks) {
-					$('#' + id).html(response.blocks[id]);
-				}
-				// inject session if (TODO: check if this is really needed)
-				// $.cookie('frontend', response.sid, { path: '/' });
-				
-				// TODO: trigger event
-			},
-			'json'
-		);
-	}
-	
-});
+    /**
+     * populate page
+     */
+    populatePage: function () {
+        this.replaceCookieContent();
+        this.replaceAjaxBlocks();
+        if (this.isLoggedIn()) {
+            jQuery('.aoestatic_notloggedin').hide();
+            jQuery('.aoestatic_loggedin').show();
+        } else {
+            jQuery('.aoestatic_loggedin').hide();
+            jQuery('.aoestatic_notloggedin').show();
+        }
+    },
+
+    /**
+     * Replace cookie content
+     */
+    replaceCookieContent: function () {
+        jQuery.each(this.getCookieContent(), function (name, value) {
+            jQuery('.aoestatic_' + name).text(value);
+            // console.log('Replacing ".aoestatic_' + name + '" with "' + value + '"');
+        })
+    },
+
+    isLoggedIn: function () {
+        var cookieValues = this.getCookieContent();
+        return typeof cookieValues['customername'] != 'undefined' && cookieValues['customername'].length;
+    },
+
+
+    getCookies: function () {
+        var cookies = { };
+        if (document.cookie && document.cookie != '') {
+            var split = document.cookie.split(';');
+            for (var i = 0; i < split.length; i++) {
+                var name_value = split[i].split("=");
+                name_value[0] = name_value[0].replace(/^ /, '');
+
+                var s = name_value[1];
+                cookies[decodeURIComponent(name_value[0])] = decodeURIComponent(s.replace(/\+/g, ' '));
+            }
+        }
+        return cookies;
+    },
+
+    /**
+     * Get info from cookies
+     */
+    getCookieContent: function () {
+        // expected format as_[g|w<websiteId>|s<storeId>]
+        var values = {};
+        jQuery.each(this.getCookies(), function (name, value) {
+            if (name.substr(0, 10) == 'aoestatic_') {
+                name = name.substr(10);
+                var parts = name.split('_')
+                var scope = parts.splice(0, 1)[0];
+                var name = parts.join('_');
+                if (name && scope) {
+                    if (typeof values[name] == 'undefined') {
+                        values[name] = {};
+                    }
+                    values[name][scope] = value;
+                }
+            }
+        });
+
+        var cookieValues = {};
+        jQuery.each(values, function (name, data) {
+            if (typeof data['s' + Aoe_Static.storeId] != 'undefined') {
+                cookieValues[name] = data['s' + Aoe_Static.storeId];
+            } else if (typeof data['w' + Aoe_Static.websiteId] != 'undefined') {
+                cookieValues[name] = data['w' + Aoe_Static.websiteId];
+            } else if (typeof data['g'] != 'undefined') {
+                cookieValues[name] = data['g'];
+            }
+        });
+        return cookieValues;
+    },
+
+    /**
+     * Load block content from server
+     */
+    replaceAjaxBlocks: function () {
+        jQuery(document).ready(function ($) {
+            var data = {
+                getBlocks: {}
+            };
+
+            // add placeholders
+            var counter = 0;
+            $('.as-placeholder').each(function () {
+                var id = $(this).attr('id');
+                if (!id) {
+                    // create dynamic id
+                    id = 'ph_' + counter;
+                    $(this).attr('id', id);
+                }
+                var rel = $(this).attr('rel');
+                if (rel) {
+                    data.getBlocks[id] = rel;
+                    counter++;
+                } else {
+                    // console.log(this);
+                    throw 'Found placeholder without rel attribute';
+                }
+            });
+
+            // add current product
+            /* This needs some serious refactoring anyways...
+             if (typeof currentproductid !== 'undefined' && currentproductid) {
+             data.currentProductId = currentproductid;
+             }
+             */
+
+            // E.T. phone home
+            if (typeof data.currentProductId !== 'undefined' || counter > 0) {
+                $.get(
+                    this.ajaxHomeUrl,
+                    data,
+                    function (response) {
+                        for (var id in response.blocks) {
+                            $('#' + id).html(response.blocks[id]);
+                        }
+                        jQuery('body').trigger('aoestatic_afterblockreplace');
+                    },
+                    'json'
+                );
+            }
+
+        });
+    }
+}
+
+
